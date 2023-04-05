@@ -8,6 +8,8 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int TILE_SIZE = 32;
+const int GRID_WIDTH = SCREEN_WIDTH / TILE_SIZE;
+const int GRID_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
 
 // SDL variables
 SDL_Window *gWindow = NULL;
@@ -17,11 +19,17 @@ SDL_Renderer *gRenderer = NULL;
 SDL_Rect pacman;
 int pacmanSpeed = 1;
 
+// Maze variables
+int maze[GRID_HEIGHT][GRID_WIDTH];
+
 // Function prototypes
 bool init();
 void close();
 void movePacman();
 void drawPacman();
+void generateMaze();
+bool canMove(int x, int y);
+void drawMaze();
 
 int main(int argc, char *args[]) {
     if (!init()) {
@@ -33,6 +41,7 @@ int main(int argc, char *args[]) {
         pacman.y = (SCREEN_HEIGHT - TILE_SIZE) / 2;
         pacman.w = TILE_SIZE;
         pacman.h = TILE_SIZE;
+        generateMaze();
 
         bool quit = false;
         SDL_Event e;
@@ -49,6 +58,7 @@ int main(int argc, char *args[]) {
             SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
             SDL_RenderClear(gRenderer);
 
+            drawMaze();
             drawPacman();
 
             SDL_RenderPresent(gRenderer);
@@ -90,24 +100,70 @@ void close() {
     SDL_Quit();
 }
 
-void movePacman() {
-    const Uint8 *keystate = SDL_GetKeyboardState(NULL);
-
-    if (keystate[SDL_SCANCODE_UP]) {
-        pacman.y -= pacmanSpeed;
-    }
-    if (keystate[SDL_SCANCODE_DOWN]) {
-        pacman.y += pacmanSpeed;
-    }
-    if (keystate[SDL_SCANCODE_LEFT]) {
-        pacman.x -= pacmanSpeed;
-    }
-    if (keystate[SDL_SCANCODE_RIGHT]) {
-        pacman.x += pacmanSpeed;
-    }
-}
-
 void drawPacman() {
     SDL_SetRenderDrawColor(gRenderer, 255, 255, 0, 255);
     SDL_RenderFillRect(gRenderer, &pacman);
 }
+
+void movePacman() {
+    const Uint8 *keystate = SDL_GetKeyboardState(NULL);
+    int newX = pacman.x, newY = pacman.y;
+
+    if (keystate[SDL_SCANCODE_UP]) {
+        newY -= pacmanSpeed;
+    }
+    if (keystate[SDL_SCANCODE_DOWN]) {
+        newY += pacmanSpeed;
+    }
+    if (keystate[SDL_SCANCODE_LEFT]) {
+        newX -= pacmanSpeed;
+    }
+    if (keystate[SDL_SCANCODE_RIGHT]) {
+        newX += pacmanSpeed;
+    }
+
+    if (canMove(newX, pacman.y)) {
+        pacman.x = newX;
+    }
+
+    if (canMove(pacman.x, newY)) {
+        pacman.y = newY;
+    }
+}
+
+void generateMaze() {
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            if (y == 0 || y == GRID_HEIGHT - 1 || x == 0 || x == GRID_WIDTH - 1) {
+                maze[y][x] = 1;
+            } else {
+                maze[y][x] = (rand() % 100 < 20) ? 1 : 0;
+            }
+        }
+    }
+}
+
+bool canMove(int x, int y) {
+    int leftTileX = (x) / TILE_SIZE;
+    int rightTileX = (x + pacman.w - 1) / TILE_SIZE;
+    int topTileY = (y) / TILE_SIZE;
+    int bottomTileY = (y + pacman.h - 1) / TILE_SIZE;
+
+    return maze[topTileY][leftTileX] == 0 &&
+           maze[topTileY][rightTileX] == 0 &&
+           maze[bottomTileY][leftTileX] == 0 &&
+           maze[bottomTileY][rightTileX] == 0;
+}
+
+void drawMaze() {
+    SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 255);
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            if (maze[y][x] == 1) {
+                SDL_Rect wall = {x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE};
+                SDL_RenderFillRect(gRenderer, &wall);
+            }
+        }
+    }
+}
+
