@@ -30,6 +30,7 @@ void drawPacman();
 void generateMaze();
 bool canMove(int x, int y);
 void drawMaze();
+void findSpawnPoint(int *x, int *y);
 
 int main(int argc, char *args[]) {
     if (!init()) {
@@ -37,11 +38,13 @@ int main(int argc, char *args[]) {
     } else {
         srand((unsigned int)time(NULL));
 
-        pacman.x = (SCREEN_WIDTH - TILE_SIZE) / 2;
-        pacman.y = (SCREEN_HEIGHT - TILE_SIZE) / 2;
+        generateMaze();
+        int spawnX, spawnY;
+        findSpawnPoint(&spawnX, &spawnY);
+        pacman.x = spawnX;
+        pacman.y = spawnY;
         pacman.w = TILE_SIZE;
         pacman.h = TILE_SIZE;
-        generateMaze();
 
         bool quit = false;
         SDL_Event e;
@@ -154,6 +157,20 @@ bool canMove(int x, int y) {
            maze[bottomTileY][leftTileX] == 0 &&
            maze[bottomTileY][rightTileX] == 0;
 }
+
+void findSpawnPoint(int *x, int *y) {
+    bool found = false;
+    while (!found) {
+        int spawnX = rand() % (GRID_WIDTH - 2) + 1;
+        int spawnY = rand() % (GRID_HEIGHT - 2) + 1;
+        if (maze[spawnY][spawnX] == 0) {
+            *x = spawnX * TILE_SIZE;
+            *y = spawnY * TILE_SIZE;
+            found = true;
+        }
+    }
+}
+
 
 void drawMaze() {
     SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 255);
