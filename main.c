@@ -10,10 +10,14 @@ const int SCREEN_HEIGHT = 480;
 const int TILE_SIZE = 32;
 const int GRID_WIDTH = SCREEN_WIDTH / TILE_SIZE;
 const int GRID_HEIGHT = SCREEN_HEIGHT / TILE_SIZE;
+const int DOT_COUNT = 100;
 
 // SDL variables
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
+
+// Dot variables
+SDL_Rect dots[DOT_COUNT];
 
 // Pacman variables
 SDL_Rect pacman;
@@ -31,6 +35,9 @@ void generateMaze();
 bool canMove(int x, int y);
 void drawMaze();
 void findSpawnPoint(int *x, int *y);
+void generateDots();
+void checkDotCollision();
+void drawDots();
 
 int main(int argc, char *args[]) {
     if (!init()) {
@@ -45,6 +52,7 @@ int main(int argc, char *args[]) {
         pacman.y = spawnY;
         pacman.w = TILE_SIZE;
         pacman.h = TILE_SIZE;
+        generateDots();
 
         bool quit = false;
         SDL_Event e;
@@ -62,6 +70,8 @@ int main(int argc, char *args[]) {
             SDL_RenderClear(gRenderer);
 
             drawMaze();
+            checkDotCollision();
+            drawDots();
             drawPacman();
 
             SDL_RenderPresent(gRenderer);
@@ -183,4 +193,34 @@ void drawMaze() {
         }
     }
 }
+
+void generateDots() {
+    for (int i = 0; i < DOT_COUNT; i++) {
+        int dotX, dotY;
+        findSpawnPoint(&dotX, &dotY);
+        dots[i].x = dotX;
+        dots[i].y = dotY;
+        dots[i].w = TILE_SIZE / 4;
+        dots[i].h = TILE_SIZE / 4;
+    }
+}
+
+void checkDotCollision() {
+    for (int i = 0; i < DOT_COUNT; i++) {
+        if (dots[i].w != 0 && SDL_HasIntersection(&pacman, &dots[i])) {
+            dots[i].w = 0;
+            dots[i].h = 0;
+        }
+    }
+}
+
+void drawDots() {
+    SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
+    for (int i = 0; i < DOT_COUNT; i++) {
+        if (dots[i].w != 0) {
+            SDL_RenderFillRect(gRenderer, &dots[i]);
+        }
+    }
+}
+
 
