@@ -1,7 +1,9 @@
 #include <SDL.h>
+#include <SDL_ttf.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 // Constants
@@ -22,6 +24,7 @@ SDL_Rect dots[DOT_COUNT];
 // Pacman variables
 SDL_Rect pacman;
 int pacmanSpeed = 1;
+int score = 0;
 
 // Maze variables
 int maze[GRID_HEIGHT][GRID_WIDTH];
@@ -38,6 +41,7 @@ void findSpawnPoint(int *x, int *y);
 void generateDots();
 void checkDotCollision();
 void drawDots();
+void renderText(const char *text, int x, int y, SDL_Color color);
 
 int main(int argc, char *args[]) {
     if (!init()) {
@@ -73,6 +77,11 @@ int main(int argc, char *args[]) {
             checkDotCollision();
             drawDots();
             drawPacman();
+            char scoreText[20];
+            sprintf(scoreText, "Score %d", score);
+            SDL_Color whiteColor = {255, 255, 255, 255};
+            renderText(scoreText, 10, 10, whiteColor);
+
 
             SDL_RenderPresent(gRenderer);
         }
@@ -88,6 +97,12 @@ bool init() {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
+    //Call TTF_Init() before using the functions
+    if (TTF_Init() == -1) {
+        printf("TTF_Init: %s \n", TTF_GetError());
+        return false;
+    }
+
 
     gWindow = SDL_CreateWindow("Pacman", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (gWindow == NULL) {
@@ -198,21 +213,24 @@ void generateDots() {
     for (int i = 0; i < DOT_COUNT; i++) {
         int dotX, dotY;
         findSpawnPoint(&dotX, &dotY);
-        dots[i].x = dotX;
-        dots[i].y = dotY;
+        dots[i].x = dotX + TILE_SIZE / 2 - (TILE_SIZE / 4) / 2;
+        dots[i].y = dotY + TILE_SIZE / 2 - (TILE_SIZE / 4) / 2;
         dots[i].w = TILE_SIZE / 4;
         dots[i].h = TILE_SIZE / 4;
     }
 }
+
 
 void checkDotCollision() {
     for (int i = 0; i < DOT_COUNT; i++) {
         if (dots[i].w != 0 && SDL_HasIntersection(&pacman, &dots[i])) {
             dots[i].w = 0;
             dots[i].h = 0;
+            score += 10;
         }
     }
 }
+
 
 void drawDots() {
     SDL_SetRenderDrawColor(gRenderer, 255, 255, 255, 255);
@@ -222,5 +240,35 @@ void drawDots() {
         }
     }
 }
+
+void renderText(const char *text, int x, int y, SDL_Color color) {
+    char *basePath = SDL_GetBasePath();
+    if (!basePath) {
+        printf("SDL_GetBasePath: %s\n", SDL_GetError());
+        return;
+    }
+
+    char fontPath[256];
+    strcpy(fontPath, basePath);
+    strcat(fontPath, "assets/ARCADECLASSIC.TTF");
+
+    TTF_Font *font = TTF_OpenFont(fontPath, 24);
+    if (!font) {
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+        return;
+    }
+
+    SDL_Surface *textSurface = TTF_RenderText_Solid(font, text, color);
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+    SDL_Rect textRect = {x, y, textSurface->w, textSurface->h};
+
+    SDL_RenderCopy(gRenderer, textTexture, NULL, &textRect);
+
+    SDL_DestroyTexture(textTexture);
+    SDL_FreeSurface(textSurface);
+    TTF_CloseFont(font);
+    SDL_free(basePath);
+}
+
 
 
