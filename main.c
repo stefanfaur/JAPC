@@ -137,16 +137,16 @@ void movePacman() {
     const Uint8 *keystate = SDL_GetKeyboardState(NULL);
     int newX = pacman.x, newY = pacman.y;
 
-    if (keystate[SDL_SCANCODE_UP]) {
+    if (keystate[SDL_SCANCODE_UP] || keystate[SDL_SCANCODE_W]) {
         newY -= pacmanSpeed;
     }
-    if (keystate[SDL_SCANCODE_DOWN]) {
+    if (keystate[SDL_SCANCODE_DOWN] || keystate[SDL_SCANCODE_S]) {
         newY += pacmanSpeed;
     }
-    if (keystate[SDL_SCANCODE_LEFT]) {
+    if (keystate[SDL_SCANCODE_LEFT] || keystate[SDL_SCANCODE_A]) {
         newX -= pacmanSpeed;
     }
-    if (keystate[SDL_SCANCODE_RIGHT]) {
+    if (keystate[SDL_SCANCODE_RIGHT] || keystate[SDL_SCANCODE_D]) {
         newX += pacmanSpeed;
     }
 
@@ -158,6 +158,7 @@ void movePacman() {
         pacman.y = newY;
     }
 }
+
 
 void generateMaze() {
     for (int y = 0; y < GRID_HEIGHT; y++) {
